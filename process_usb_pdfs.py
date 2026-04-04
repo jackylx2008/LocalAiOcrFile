@@ -1,3 +1,42 @@
+"""
+文件说明：
+- 自动扫描已插入 U 盘中的 PDF，复制到本地输入目录后串联执行切分和重命名。
+
+主要职责：
+- 枚举 Windows 可移动磁盘并筛选目标日期的 PDF。
+- 将源 PDF 复制到本地 input_dir，并避免同名冲突。
+- 依次调用切分流程和重命名流程完成批处理。
+
+运行方式：
+- 分类：独立运行
+- 直接运行命令：python process_usb_pdfs.py
+- 直接运行用途：作为整套业务流程的批处理入口，处理 U 盘中的 PDF 文件。
+- 被谁调用：通常不作为其他脚本的依赖入口
+- 作为依赖用途：无
+
+输入：
+- 配置输入：config.yaml、common.env、命令行参数 --config / --env
+- 数据输入：已插入 U 盘中的 PDF、本地 input_dir、output_path
+- 前置条件：需在 Windows 下运行；U 盘已插入；项目解释器和依赖环境可用
+
+输出：
+- 结果输出：复制后的本地输入 PDF、切分后的 PDF、重命名后的 PDF
+- 日志输出：./log/process_usb_pdfs.log
+- 副作用：清空本地 input_dir 和 output_path，对文件进行复制、生成和重命名
+
+核心入口：
+- 主入口函数：main()
+- 关键函数：copy_pdfs_from_usb_drives()、process_single_pdf()、list_removable_drive_roots()
+
+依赖关系：
+- 依赖的本项目模块：logging_config.py、rename_pdfs_by_regex.py、split_pdf_keyword.py
+- 依赖的第三方库：无
+
+使用提醒：
+- 这是面向日常使用的主入口之一，适合“插入 U 盘后批量处理”场景。
+- 默认只处理符合当前日期筛选规则的 PDF，不会无条件扫描全部文件。
+"""
+
 import argparse
 import copy
 import ctypes

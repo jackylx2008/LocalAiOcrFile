@@ -1,3 +1,43 @@
+"""
+文件说明：
+- 封装 OCR 引擎初始化、CUDA 自检、PDF 转图片和逐页文字识别流程。
+
+主要职责：
+- 初始化 RapidOCR 与 ONNX Runtime provider。
+- 注入 CUDA DLL 搜索路径并输出启动前自检信息。
+- 将 PDF 页面转换为图像并执行 OCR 识别。
+
+运行方式：
+- 分类：被依赖脚本
+- 直接运行命令：不建议直接运行
+- 直接运行用途：无独立业务入口，主要作为 OCR 能力模块被其他脚本导入。
+- 被谁调用：split_pdf_keyword.py、rename_pdfs_by_regex.py
+- 作为依赖用途：为切分与重命名流程提供 OCR 识别和启动自检能力。
+
+输入：
+- 配置输入：config 中的 ocr 配置项
+- 数据输入：PDF 文件路径、PDF 页面图像
+- 前置条件：需安装 PyMuPDF、rapidocr-onnxruntime；若启用 GPU 还需 CUDA 相关运行库可用
+
+输出：
+- 结果输出：OCR 结果列表、PDFOCRProcessor 实例
+- 日志输出：./log/ocr_engine.log 或调用方传入的 logger
+- 副作用：修改当前进程 PATH，并尝试注册 CUDA DLL 目录
+
+核心入口：
+- 主入口函数：run_startup_self_check()
+- 关键类：PDFOCRProcessor
+- 关键函数：_inject_cuda_runtime_paths()、_collect_key_cuda_dll_paths()
+
+依赖关系：
+- 依赖的本项目模块：logging_config.py
+- 依赖的第三方库：PyMuPDF、numpy、rapidocr-onnxruntime、onnxruntime、opencv-python
+
+使用提醒：
+- 该模块没有独立 CLI，通常不要单独执行。
+- 若 GPU 初始化失败，会自动回退到 CPU，并在日志中明确记录。
+"""
+
 import os
 import site
 import fitz  # PyMuPDF

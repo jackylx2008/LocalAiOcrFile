@@ -1,3 +1,43 @@
+"""
+文件说明：
+- 根据 OCR 结果和关键词规则，将单个 PDF 拆分为多个子 PDF。
+
+主要职责：
+- 判断每页是否同时命中全部切分关键词。
+- 计算切分起始页并生成切分区间。
+- 将原 PDF 导出为多个子 PDF 文件。
+
+运行方式：
+- 分类：被依赖脚本
+- 直接运行命令：不建议直接运行
+- 直接运行用途：无独立业务入口，主要作为切分模块被主流程脚本导入。
+- 被谁调用：split_pdf_keyword.py
+- 作为依赖用途：为单文件切分流程提供 PDF 拆分能力。
+
+输入：
+- 配置输入：config 中的 split_keywords / ocr.split_keywords、output_path
+- 数据输入：输入 PDF 路径、OCR 结果列表
+- 前置条件：输入 PDF 存在；ocr_results 已由上游流程生成
+
+输出：
+- 结果输出：多个切分后的 PDF 文件
+- 日志输出：./log/splitter.log
+- 副作用：在 output_path 中创建文件；必要时自动创建输出目录
+
+核心入口：
+- 主入口函数：无固定业务主入口
+- 关键类：PDFSplitter
+- 关键函数：split_by_ocr_results()
+
+依赖关系：
+- 依赖的本项目模块：logging_config.py
+- 依赖的第三方库：PyMuPDF
+
+使用提醒：
+- 该模块不负责 OCR，只消费上游已生成的 OCR 结果。
+- 切分规则要求“同一页同时命中全部关键词”才会被视为新的起始页。
+"""
+
 import os
 import fitz  # PyMuPDF
 from logging_config import setup_logger

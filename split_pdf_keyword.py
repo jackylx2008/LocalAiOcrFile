@@ -1,3 +1,42 @@
+"""
+文件说明：
+- 项目中用于单个 PDF 按关键词执行 OCR 切分的主入口脚本。
+
+主要职责：
+- 确保使用项目内 .conda 解释器运行。
+- 加载运行时配置并在需要时清空输出目录。
+- 调用 OCR 与切分模块完成单文件处理。
+
+运行方式：
+- 分类：两者都可以
+- 直接运行命令：python split_pdf_keyword.py --input-file <pdf路径>
+- 直接运行用途：处理单个 PDF，执行 OCR 识别并按关键词切分。
+- 被谁调用：process_usb_pdfs.py、rename_pdfs_by_regex.py
+- 作为依赖用途：向其他脚本提供解释器切换、运行时配置加载和单文件处理能力。
+
+输入：
+- 配置输入：config.yaml、common.env、命令行参数 --config / --env / --input-file / --output-path
+- 数据输入：单个 PDF 文件
+- 前置条件：需安装 OCR 和 PDF 相关依赖；输入 PDF 路径存在
+
+输出：
+- 结果输出：切分后的 PDF 文件
+- 日志输出：./log/split_pdf_keyword.log
+- 副作用：默认会清空 output_path 后再生成新的切分结果
+
+核心入口：
+- 主入口函数：main()
+- 关键函数：ensure_project_python()、load_runtime_config()、process_pdf_with_config()
+
+依赖关系：
+- 依赖的本项目模块：config_loader.py、logging_config.py、ocr_engine.py、splitter.py
+- 依赖的第三方库：无
+
+使用提醒：
+- 这是面向“手动处理单个 PDF”场景的主入口。
+- process_pdf_with_config() 被复用时可通过 clear_output=False 避免清空已有输出。
+"""
+
 import argparse
 import os
 import shutil
