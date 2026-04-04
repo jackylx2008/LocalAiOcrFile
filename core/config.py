@@ -1,17 +1,18 @@
 """
 文件说明：
-- 负责读取 config.yaml 和 common.env，并完成环境变量模板替换。
+- 负责读取 config.yaml 和 common.env，并完成环境变量模板替换与运行时配置覆盖。
 
 主要职责：
 - 解析 .env 风格的环境变量文件。
 - 将 config.yaml 中的 ${VAR} / ${VAR:-default} 渲染为实际值。
 - 输出可供业务脚本直接使用的配置字典。
+- 支持对 input_file、output_path 等运行时字段进行覆盖。
 
 运行方式：
 - 分类：被依赖脚本
 - 直接运行命令：不建议直接运行
 - 直接运行用途：无独立业务入口，主要作为配置加载模块被其他脚本导入。
-- 被谁调用：split_pdf_keyword.py、rename_pdfs_by_regex.py
+- 被谁调用：split_pdf_keyword.py、rename_pdfs_by_regex.py、process_usb_pdfs.py
 - 作为依赖用途：为主流程脚本提供统一配置加载能力。
 
 输入：
@@ -26,7 +27,7 @@
 
 核心入口：
 - 主入口函数：load_config()
-- 关键函数：parse_env_file()、render_config_template()
+- 关键函数：parse_env_file()、render_config_template()、load_runtime_config()
 
 依赖关系：
 - 依赖的本项目模块：无
@@ -120,3 +121,20 @@ def load_config(config_path, env_path=None):
     )
     loaded = yaml.safe_load(rendered_config)
     return loaded or {}
+
+
+def load_runtime_config(
+    config_path="config.yaml", env_path=None, input_file=None, output_path=None
+):
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"配置文件 {config_path} 不存在。")
+
+    config = load_config(config_path, env_path=env_path)
+
+    if input_file is not None:
+        config["input_file"] = str(Path(input_file))
+
+    if output_path is not None:
+        config["output_path"] = str(Path(output_path))
+
+    return config

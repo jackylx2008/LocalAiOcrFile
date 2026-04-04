@@ -11,7 +11,7 @@
 - 分类：被依赖脚本
 - 直接运行命令：不建议直接运行
 - 直接运行用途：无独立业务入口，主要作为 OCR 能力模块被其他脚本导入。
-- 被谁调用：split_pdf_keyword.py、rename_pdfs_by_regex.py
+- 被谁调用：workflows.split_workflow、services.pdf_rename_service
 - 作为依赖用途：为切分与重命名流程提供 OCR 识别和启动自检能力。
 
 输入：
@@ -30,7 +30,7 @@
 - 关键函数：_inject_cuda_runtime_paths()、_collect_key_cuda_dll_paths()
 
 依赖关系：
-- 依赖的本项目模块：logging_config.py
+- 依赖的本项目模块：core.logging_utils
 - 依赖的第三方库：PyMuPDF、numpy、rapidocr-onnxruntime、onnxruntime、opencv-python
 
 使用提醒：
@@ -42,7 +42,7 @@ import os
 import site
 import fitz  # PyMuPDF
 import numpy as np
-from logging_config import setup_logger
+from core.logging_utils import setup_logger
 
 
 KEY_CUDA_DLLS = [

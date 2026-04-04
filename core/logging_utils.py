@@ -9,9 +9,9 @@
 
 运行方式：
 - 分类：两者都可以
-- 直接运行命令：python logging_config.py
+- 直接运行命令：python -m core.logging_utils
 - 直接运行用途：仅用于日志配置自测，会输出测试日志到 ./log/test_logger.log。
-- 被谁调用：split_pdf_keyword.py、process_usb_pdfs.py、rename_pdfs_by_regex.py、ocr_engine.py、splitter.py
+- 被谁调用：根目录入口脚本、services.ocr_service、services.pdf_split_service
 - 作为依赖用途：为其他脚本提供统一日志记录器。
 
 输入：
@@ -42,9 +42,6 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 from typing import Optional
-
-# 动态添加项目根目录到 sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def setup_logger(

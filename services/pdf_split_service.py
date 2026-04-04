@@ -11,7 +11,7 @@
 - 分类：被依赖脚本
 - 直接运行命令：不建议直接运行
 - 直接运行用途：无独立业务入口，主要作为切分模块被主流程脚本导入。
-- 被谁调用：split_pdf_keyword.py
+- 被谁调用：workflows.split_workflow
 - 作为依赖用途：为单文件切分流程提供 PDF 拆分能力。
 
 输入：
@@ -30,7 +30,7 @@
 - 关键函数：split_by_ocr_results()
 
 依赖关系：
-- 依赖的本项目模块：logging_config.py
+- 依赖的本项目模块：core.logging_utils
 - 依赖的第三方库：PyMuPDF
 
 使用提醒：
@@ -40,7 +40,7 @@
 
 import os
 import fitz  # PyMuPDF
-from logging_config import setup_logger
+from core.logging_utils import setup_logger
 
 logger = setup_logger(log_file="./log/splitter.log")
 

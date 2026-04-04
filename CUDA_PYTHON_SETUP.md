@@ -79,7 +79,7 @@ nvidia-smi
 ## 5. 运行项目内置启动前自检
 
 ```powershell
-.\.conda\python.exe -c "from config_loader import load_config; from ocr_engine import run_startup_self_check; cfg=load_config('config.yaml'); proc=run_startup_self_check(cfg); print(proc.get_provider_status())"
+.\.conda\python.exe -c "from core.config import load_config; from services.ocr_service import run_startup_self_check; cfg=load_config('config.yaml'); proc=run_startup_self_check(cfg); print(proc.get_provider_status())"
 ```
 
 自检会在日志中输出：

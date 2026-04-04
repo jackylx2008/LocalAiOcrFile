@@ -25,12 +25,12 @@
 
 ## 目录说明
 
-- `split_pdf_keyword.py`：主流程入口（解释器兜底切换、启动清理、自检、切分）
-- `rename_pdfs_by_regex.py`：按首页 OCR 结果执行重命名
-- `process_usb_pdfs.py`：自动扫描所有已插入 U 盘，将 PDF 复制到本地 `input` 目录后串联执行切分 + 重命名
-- `ocr_engine.py`：OCR 处理与 CUDA 自检
-- `splitter.py`：按关键词规则切分 PDF
-- `logging_config.py`：统一日志配置
+- `split_pdf_keyword.py`：单文件切分入口脚本
+- `rename_pdfs_by_regex.py`：输出目录重命名入口脚本
+- `process_usb_pdfs.py`：U 盘一条龙处理入口脚本
+- `core/`：基础设施层，存放运行时、配置、日志
+- `services/`：能力实现层，存放 OCR、切分、重命名、U 盘扫描、文件操作
+- `workflows/`：流程编排层，串联切分、重命名、U 盘批处理流程
 - `config.yaml`：规则型配置，如关键字、正则、OCR 参数映射
 - `common.env`：环境隔离配置，如本地输入目录、GPU 开关
 - `.vscode/settings.json`：VS Code 解释器与 Run Code 配置
@@ -84,7 +84,7 @@ ocr:
 如果你仍然需要手动处理单个文件，也可以直接运行：
 
 ```powershell
-.\.conda\python.exe split_pdf_keyword.py
+.\.conda\python.exe split_pdf_keyword.py --input-file .\input\example.pdf
 ```
 
 如需按首页 OCR 正则重命名输出文件：
@@ -99,7 +99,9 @@ ocr:
 
 - 日志目录：`./log/`
 - 日志文件：
-  - `main.log`
+  - `split_pdf_keyword.log`
+  - `rename_pdfs_by_regex.log`
+  - `process_usb_pdfs.log`
   - `ocr_engine.log`
   - `splitter.log`
 - 输出目录：`output_path`（默认 `./output/`）
