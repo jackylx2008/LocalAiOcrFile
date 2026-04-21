@@ -131,6 +131,32 @@ ocr:
 - 每次启动前覆盖 `./log/png_regex_ocr.log`
 - 每次启动前清空旧的统计 TXT
 
+## llama.cpp OCR
+
+项目现在支持通过 `llama.cpp` 直接做统一 OCR，并可在代码内自动拉起本地 `llama-server`。
+
+关键配置位于 `config.yaml -> ocr`：
+
+- `llamacpp_base_url`
+- `llamacpp_model`
+- `llamacpp_autostart`
+- `llamacpp_server_path`
+- `llamacpp_model_path`
+- `llamacpp_mmproj_path`
+- `llamacpp_n_gpu_layers`
+
+当 `llamacpp_autostart=true` 时，OCR 初始化会：
+
+- 优先复用已经运行的 `llama-server`
+- 如果目标地址不可达，则自动启动 `llama-server`
+- 自动校验当前模型是否具备 `multimodal` 能力
+- 如果服务未加载 `mmproj`，会在初始化阶段直接报错，而不是等到 OCR 请求时再返回 500
+
+项目默认按以下组合启动：
+
+- 模型：`Qwen_Qwen2.5-VL-7B-Instruct-Q4_K_S.gguf`
+- 视觉投影：`mmproj-Qwen_Qwen2.5-VL-7B-Instruct-f16.gguf`
+
 相关配置：
 
 - `config.yaml`
