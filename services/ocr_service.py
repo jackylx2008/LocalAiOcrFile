@@ -23,6 +23,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from pathlib import Path
 from urllib.parse import urlparse
 import atexit
@@ -103,6 +104,18 @@ _LLAMACPP_MANAGED_BASE_URL = None
 
 def _ensure_parent_dir(file_path):
     Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+
+def _read_log_tail(log_path, max_lines=40):
+    path = Path(log_path)
+    if not path.exists():
+        return f"[日志文件不存在] {path}"
+
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as file:
+            return "".join(deque(file, maxlen=max_lines)).strip() or f"[日志为空] {path}"
+    except OSError as exc:
+        return f"[读取日志失败] {path}, error={exc}"
 
 
 def _terminate_managed_llamacpp_server():
@@ -447,6 +460,22 @@ class LlamaCppOCRProcessor(BaseOCRProcessor):
             "--verbose",
         ]
 
+    def _format_startup_log_tail(self):
+        stderr_tail = _read_log_tail(self.stderr_log_path)
+        stdout_tail = _read_log_tail(self.stdout_log_path)
+        return (
+            f"stderr_tail=\n{stderr_tail}\n"
+            f"stdout_tail=\n{stdout_tail}"
+        )
+
+    def _build_startup_failure_message(self, process):
+        return (
+            "llama.cpp 进程启动后提前退出。"
+            f" returncode={process.returncode}; "
+            f"stderr_log={self.stderr_log_path}; stdout_log={self.stdout_log_path}; "
+            f"日志摘要: {self._format_startup_log_tail()}"
+        )
+
     def _start_managed_server(self):
         global _LLAMACPP_MANAGED_PROCESS, _LLAMACPP_MANAGED_BASE_URL
 
@@ -492,22 +521,22 @@ class LlamaCppOCRProcessor(BaseOCRProcessor):
         last_error = None
         while time.time() < deadline:
             if process.poll() is not None:
-                raise RuntimeError(
-                    "llama.cpp 进程启动后立即退出，请检查日志: "
-                    f"{self.stdout_log_path}, {self.stderr_log_path}"
-                )
+                raise RuntimeError(self._build_startup_failure_message(process))
 
             try:
                 self._endpoint_healthcheck()
                 self.logger.info("llama.cpp 自动启动成功，healthcheck 已通过。")
                 return
+            except KeyboardInterrupt:
+                self.logger.warning("启动等待期间收到 Ctrl+C，准备中断 llama.cpp 自启动流程。")
+                raise
             except Exception as exc:
                 last_error = exc
                 time.sleep(self.startup_poll_interval_sec)
 
         raise RuntimeError(
             "等待 llama.cpp 自动启动超时，最后一次错误: "
-            f"{last_error}. 日志: {self.stdout_log_path}, {self.stderr_log_path}"
+            f"{last_error}. 启动日志摘要: {self._format_startup_log_tail()}"
         )
 
     def _extract_model_capabilities(self, models_payload):
@@ -607,6 +636,11 @@ class LlamaCppOCRProcessor(BaseOCRProcessor):
         try:
             with urllib.request.urlopen(request, timeout=self.timeout_sec) as response:
                 return json.loads(response.read().decode("utf-8"))
+        except KeyboardInterrupt:
+            self.logger.warning(
+                f"收到 Ctrl+C，中断 llama.cpp 请求: method={method}, url={url}"
+            )
+            raise
         except urllib.error.HTTPError as exc:
             error_body = exc.read().decode("utf-8", errors="replace")
             raise RuntimeError(

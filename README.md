@@ -116,7 +116,7 @@ ocr:
 
 ## PNG OCR 工作流
 
-项目已增加一个面向 PNG 图片的 OCR 统计入口：
+项目已增加一个面向图片文件的 OCR 统计入口：
 
 ```powershell
 .\.conda\python.exe png_regex_ocr.py
@@ -124,12 +124,13 @@ ocr:
 
 该流程会：
 
-- 读取 `png_ocr_input_path` 下的 `*.png`
+- 读取 `png_ocr_input_path` 下的 `*.png`、`*.jpg`、`*.jpeg`
 - 复用现有 OCR 引擎进行识别
 - 按 `regex_pattern` 统计命中字符串
 - 将结果写入 `png_ocr_output_txt_path`
 - 每次启动前覆盖 `./log/png_regex_ocr.log`
 - 每次启动前清空旧的统计 TXT
+- 手动按 `Ctrl+C` 可中断当前 OCR 流程，入口脚本会记录中断日志并退出
 
 ## llama.cpp OCR
 
@@ -151,6 +152,7 @@ ocr:
 - 如果目标地址不可达，则自动启动 `llama-server`
 - 自动校验当前模型是否具备 `multimodal` 能力
 - 如果服务未加载 `mmproj`，会在初始化阶段直接报错，而不是等到 OCR 请求时再返回 500
+- 如果启动失败或超时，会在主日志中附带 `stdout/stderr` 尾部摘要，便于直接定位问题
 
 项目默认按以下组合启动：
 

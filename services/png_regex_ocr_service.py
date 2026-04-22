@@ -87,7 +87,7 @@ def _normalize_regex_findall_result(matched_text):
 def _ocr_png_file(png_path, ocr_processor, logger):
     image = _read_image_with_unicode_path(png_path, logger)
     if image is None:
-        logger.warning(f"读取 PNG 失败，已跳过: {png_path}")
+        logger.warning(f"读取图片失败，已跳过: {png_path}")
         return ""
 
     original_text = _run_ocr_on_image(image, ocr_processor)
@@ -232,7 +232,7 @@ def extract_regex_matches_from_pngs(png_files, config, logger):
     compiled_patterns = compile_regex_patterns(config)
     configured_patterns = [pattern_info["raw"] for pattern_info in compiled_patterns]
     if not png_files:
-        logger.warning("没有待识别的 PNG 文件。")
+        logger.warning("没有待识别的图片文件。")
         return Counter(), []
 
     if not compiled_patterns:
@@ -274,7 +274,7 @@ def extract_regex_matches_from_pngs(png_files, config, logger):
 
     if unmatched_files:
         logger.warning(
-            "以下 PNG 未匹配到任何 regex_pattern: " + ", ".join(unmatched_files)
+            "以下图片未匹配到任何 regex_pattern: " + ", ".join(unmatched_files)
         )
 
     return match_counter, unmatched_files

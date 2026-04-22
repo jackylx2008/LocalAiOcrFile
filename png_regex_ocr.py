@@ -81,12 +81,16 @@ def main():
         logger.error(str(exc))
         return
 
-    run_png_regex_workflow(
-        config,
-        logger,
-        input_path=args.input_path,
-        output_txt_path=args.output_txt,
-    )
+    try:
+        run_png_regex_workflow(
+            config,
+            logger,
+            input_path=args.input_path,
+            output_txt_path=args.output_txt,
+        )
+    except KeyboardInterrupt:
+        logger.warning("收到 Ctrl+C，PNG OCR 工作流已被用户中断。")
+        raise SystemExit(130)
 
 
 if __name__ == "__main__":

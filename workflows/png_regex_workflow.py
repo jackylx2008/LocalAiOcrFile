@@ -40,9 +40,14 @@ from services.png_regex_ocr_service import (
 )
 
 
-def _collect_png_files(input_path):
+def _collect_image_files(input_path):
     source_dir = Path(input_path)
-    return sorted(path for path in source_dir.glob("*.png") if path.is_file())
+    image_suffixes = {".png", ".jpg", ".jpeg"}
+    return sorted(
+        path
+        for path in source_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in image_suffixes
+    )
 
 
 def run_png_regex_workflow(config, logger, input_path=None, output_txt_path=None):
@@ -69,13 +74,13 @@ def run_png_regex_workflow(config, logger, input_path=None, output_txt_path=None
             logger.exception(f"清空旧的 PNG OCR 统计 TXT 失败: {txt_path}, error={exc}")
             return False
 
-    png_files = _collect_png_files(source_dir)
+    png_files = _collect_image_files(source_dir)
     if not png_files:
-        logger.warning(f"PNG OCR 输入目录中没有 PNG 文件: {source_dir}")
+        logger.warning(f"PNG OCR 输入目录中没有可识别图片文件(.png/.jpg/.jpeg): {source_dir}")
         return False
 
     logger.info(
-        f"开始处理 PNG OCR 统计，目标目录: {source_dir}，PNG 数量: {len(png_files)}，输出 TXT: {txt_path}"
+        f"开始处理 PNG OCR 统计，目标目录: {source_dir}，图片数量: {len(png_files)}，输出 TXT: {txt_path}"
     )
 
     try:
