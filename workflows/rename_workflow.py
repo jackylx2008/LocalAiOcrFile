@@ -42,7 +42,14 @@ def _collect_pdf_files(input_path):
     return sorted(path for path in source_dir.glob("*.pdf") if path.is_file())
 
 
-def rename_pdfs(config, logger, input_path=None, output_path=None, in_place=False):
+def rename_pdfs(
+    config,
+    logger,
+    input_path=None,
+    output_path=None,
+    filename_prefix="",
+    in_place=False,
+):
     default_source = config.get(
         "rename_input_path", config.get("output_path", "./output/")
     )
@@ -77,6 +84,7 @@ def rename_pdfs(config, logger, input_path=None, output_path=None, in_place=Fals
         config,
         logger,
         output_dir=target_dir,
+        filename_prefix=filename_prefix,
         in_place=in_place,
     )
     return True

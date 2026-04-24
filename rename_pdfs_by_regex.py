@@ -59,6 +59,11 @@ def parse_args():
         default=None,
         help="输入目录，优先级高于 config.yaml/common.env 中的 rename_input_path",
     )
+    parser.add_argument(
+        "--filename-prefix",
+        default="",
+        help="重命名结果文件名前缀，例如传入 BG_ 后生成 BG_XXX.pdf",
+    )
     return parser.parse_args()
 
 
@@ -82,6 +87,7 @@ def main():
         config,
         logger,
         input_path=args.input_path,
+        filename_prefix=args.filename_prefix,
         in_place=True,
     )
 

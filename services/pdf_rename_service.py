@@ -43,6 +43,8 @@ from services.ocr_service import run_startup_self_check
 
 
 INVALID_FILENAME_CHARS = r'[<>:"/\\|?*]'
+RENAME_CONTEXT_KEYWORD = "设计变更通知单"
+RENAME_CONTEXT_WINDOW = 80
 WINDOWS_RESERVED_NAMES = {
     "CON",
     "PRN",
@@ -79,6 +81,17 @@ def sanitize_filename(name):
     return sanitized.upper()
 
 
+def build_prefixed_filename(prefix, matched_text):
+    normalized_prefix = re.sub(r"\s+", " ", str(prefix or "")).strip()
+    normalized_matched_text = str(matched_text or "").strip()
+    combined_name = (
+        f"{normalized_prefix}{normalized_matched_text}"
+        if normalized_prefix
+        else normalized_matched_text
+    )
+    return sanitize_filename(combined_name)
+
+
 def compile_regex_patterns(config):
     patterns = []
     for pattern in config.get("regex_pattern", []) or []:
@@ -105,6 +118,54 @@ def build_match_candidates(page_text):
     return lines + compact_lines + [full_text, compact_text]
 
 
+def get_required_context_distance(candidate, match):
+    compact_candidate = re.sub(r"\s+", "", candidate)
+    compact_match = re.sub(r"\s+", "", match.group(0))
+    compact_keyword = re.sub(r"\s+", "", RENAME_CONTEXT_KEYWORD)
+
+    if not compact_match:
+        return None
+
+    match_start = len(re.sub(r"\s+", "", candidate[: match.start()]))
+    match_end = match_start + len(compact_match)
+    context_start = max(0, match_start - RENAME_CONTEXT_WINDOW)
+    context_end = min(len(compact_candidate), match_end + RENAME_CONTEXT_WINDOW)
+    context = compact_candidate[context_start:context_end]
+
+    keyword_distances = []
+    search_from = 0
+    while True:
+        keyword_offset = context.find(compact_keyword, search_from)
+        if keyword_offset < 0:
+            break
+
+        keyword_start = context_start + keyword_offset
+        keyword_end = keyword_start + len(compact_keyword)
+        if keyword_end <= match_start:
+            keyword_distances.append(match_start - keyword_end)
+
+        search_from = keyword_offset + 1
+
+    if not keyword_distances:
+        return None
+    return min(keyword_distances)
+
+
+def find_nearest_context_match(candidate, compiled_pattern):
+    nearest_match = None
+    nearest_distance = None
+
+    for match in compiled_pattern.finditer(candidate):
+        distance = get_required_context_distance(candidate, match)
+        if distance is None:
+            continue
+        if nearest_distance is None or distance < nearest_distance:
+            nearest_match = match
+            nearest_distance = distance
+
+    return nearest_match
+
+
 def find_first_regex_match(page_text, compiled_patterns):
     seen_candidates = set()
     for candidate in build_match_candidates(page_text):
@@ -113,11 +174,15 @@ def find_first_regex_match(page_text, compiled_patterns):
         seen_candidates.add(candidate)
 
         for pattern_info in compiled_patterns:
-            strict_match = pattern_info["strict"].search(candidate)
+            strict_match = find_nearest_context_match(
+                candidate, pattern_info["strict"]
+            )
             if strict_match:
                 return strict_match.group(0), pattern_info["raw"]
 
-            relaxed_match = pattern_info["relaxed"].search(candidate)
+            relaxed_match = find_nearest_context_match(
+                candidate, pattern_info["relaxed"]
+            )
             if relaxed_match:
                 return relaxed_match.group(0), pattern_info["raw"]
 
@@ -159,7 +224,14 @@ def ocr_first_page(pdf_path, ocr_processor, logger):
     return {"page": 0, "text": ""}
 
 
-def rename_pdf_files(pdf_files, config, logger, output_dir=None, in_place=True):
+def rename_pdf_files(
+    pdf_files,
+    config,
+    logger,
+    output_dir=None,
+    filename_prefix="",
+    in_place=True,
+):
     pdf_files = sorted(Path(pdf_file) for pdf_file in pdf_files)
     compiled_patterns = compile_regex_patterns(config)
     unmatched_files = []
@@ -195,7 +267,7 @@ def rename_pdf_files(pdf_files, config, logger, output_dir=None, in_place=True):
             unmatched_files.append(pdf_file.name)
             continue
 
-        safe_name = sanitize_filename(matched_text)
+        safe_name = build_prefixed_filename(filename_prefix, matched_text)
         desired_path = target_dir / f"{safe_name}.pdf"
         if in_place and pdf_file.resolve() == desired_path.resolve():
             logger.info(f"文件名已符合匹配结果，无需重命名: {pdf_file.name}")
@@ -206,13 +278,15 @@ def rename_pdf_files(pdf_files, config, logger, output_dir=None, in_place=True):
             pdf_file.rename(target_path)
             logger.info(
                 f"首页匹配成功，已原地重命名 PDF: {pdf_file.name} -> {target_path.name}, "
-                f"matched_text={matched_text}, pattern={matched_pattern}"
+                f"matched_text={matched_text}, pattern={matched_pattern}, "
+                f"filename_prefix={filename_prefix}"
             )
         else:
             shutil.copy2(pdf_file, target_path)
             logger.info(
                 f"首页匹配成功，已复制并重命名 PDF: {pdf_file.name} -> {target_path.name}, "
-                f"matched_text={matched_text}, pattern={matched_pattern}"
+                f"matched_text={matched_text}, pattern={matched_pattern}, "
+                f"filename_prefix={filename_prefix}"
             )
 
     if unmatched_files:
